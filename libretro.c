@@ -195,6 +195,88 @@ static bool handle_hello(libusb_device_handle *dev)
    return true;
 }
 
+static void texture_rgb565(const void *block_, size_t size)
+{
+   const uint16_t *block = block_;
+   size >>= 1;
+
+   if (size > PSP_WIDTH * PSP_HEIGHT)
+      size = PSP_WIDTH * PSP_HEIGHT;
+
+   for (size_t i = 0; i < size; i++)
+   {
+      uint16_t col = block[i];
+      uint32_t r = (col >>  0) & 0x1f;
+      uint32_t g = (col >>  5) & 0x3f;
+      uint32_t b = (col >> 11) & 0x1f;
+      r = (r << 3) | (r >> 2);
+      g = (g << 2) | (g >> 4);
+      b = (b << 3) | (b >> 2);
+      g_frame[i] = (r << 16) | (g << 8) | (b << 0);
+   }
+}
+
+static void texture_argb1555(const void *block_, size_t size)
+{
+   const uint16_t *block = block_;
+   size >>= 1;
+
+   if (size > PSP_WIDTH * PSP_HEIGHT)
+      size = PSP_WIDTH * PSP_HEIGHT;
+
+   for (size_t i = 0; i < size; i++)
+   {
+      uint16_t col = block[i];
+      uint32_t r = (col >>  0) & 0x1f;
+      uint32_t g = (col >>  5) & 0x1f;
+      uint32_t b = (col >> 10) & 0x1f;
+      r = (r << 3) | (r >> 2);
+      g = (g << 3) | (g >> 2);
+      b = (b << 3) | (b >> 2);
+      g_frame[i] = (r << 16) | (g << 8) | (b << 0);
+   }
+}
+
+static void texture_argb4444(const void *block_, size_t size)
+{
+   const uint16_t *block = block_;
+   size >>= 1;
+
+   if (size > PSP_WIDTH * PSP_HEIGHT)
+      size = PSP_WIDTH * PSP_HEIGHT;
+
+   for (size_t i = 0; i < size; i++)
+   {
+      uint16_t col = block[i];
+      uint32_t r = (col >>  0) & 0x0f;
+      uint32_t g = (col >>  4) & 0x0f;
+      uint32_t b = (col >>  8) & 0x0f;
+      r = (r << 4) | (r >> 0);
+      g = (g << 4) | (g >> 0);
+      b = (b << 4) | (b >> 0);
+      g_frame[i] = (r << 16) | (g << 8) | (b << 0);
+   }
+}
+
+static void texture_argb8888(const void *block_, size_t size)
+{
+   const uint32_t *block = block_;
+
+   size >>= 2;
+   if (size > PSP_WIDTH * PSP_HEIGHT)
+      size = PSP_WIDTH * PSP_HEIGHT;
+
+   for (size_t i = 0; i < size; i++)
+   {
+      uint32_t col = block[i];
+      uint32_t r = (col >>  0) & 0xff;
+      uint32_t g = (col >>  8) & 0xff;
+      uint32_t b = (col >> 16) & 0xff;
+      uint32_t a = (col >> 24) & 0xff;
+      g_frame[i] = (r << 16) | (g << 8) | (b << 0) | (a << 24);
+   }
+}
+
 static void process_bulk(const uint8_t *block, size_t size)
 {
    struct JoyScrHeader *header = (struct JoyScrHeader*)block;
@@ -204,17 +286,25 @@ static void process_bulk(const uint8_t *block, size_t size)
 
    slock_lock(g_lock);
 
-   memcpy(g_frame, block + sizeof(*header), le32(header->size));
+   //memcpy(g_frame, block + sizeof(*header), le32(header->size));
 
-   // TODO: Support mode framebuffer formats.
-   for (unsigned i = 0; i < PSP_WIDTH * PSP_HEIGHT; i++)
+   switch ((header->mode >> 4) & 0x0f)
    {
-      uint32_t col = g_frame[i];
-      uint32_t r = (col >>  0) & 0xff;
-      uint32_t g = (col >>  8) & 0xff;
-      uint32_t b = (col >> 16) & 0xff;
-      uint32_t a = (col >> 24) & 0xff;
-      g_frame[i] = (r << 16) | (g << 8) | (b << 0) | (a << 24);
+      case 0x00:
+         texture_rgb565(block + sizeof(*header), le32(header->size));
+         break;
+
+      case 0x01:
+         texture_argb1555(block + sizeof(*header), le32(header->size));
+         break;
+
+      case 0x02:
+         texture_argb4444(block + sizeof(*header), le32(header->size));
+         break;
+
+      case 0x03:
+         texture_argb8888(block + sizeof(*header), le32(header->size));
+         break;
    }
 
    slock_unlock(g_lock);
