@@ -184,7 +184,7 @@ static bool handle_hello(libusb_device_handle *dev)
    arg1 |= SCREEN_CMD_SET_ADRESS1(((0x086c0000 - 0x08400000) / 0x8000));
    arg1 |= SCREEN_CMD_SET_ADRESS2(((0x8b000000 - 0x8a000000) / 0x40000));
 
-   uint32_t arg2 = SCREEN_CMD_SET_TRNSX(0) | SCREEN_CMD_SET_TRNSY(0) | SCREEN_CMD_SET_TRNSW(480 / 32) | SCREEN_CMD_SET_TRNSH(272 / 2);
+   uint32_t arg2 = SCREEN_CMD_SET_TRNSX(0) | SCREEN_CMD_SET_TRNSY(0) | SCREEN_CMD_SET_TRNSW(PSP_WIDTH / 32) | SCREEN_CMD_SET_TRNSH(PSP_HEIGHT / 2);
 
    if (!send_event(TYPE_JOY_CMD, le32(arg1), le32(arg2)))
    {
