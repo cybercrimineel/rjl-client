@@ -529,6 +529,38 @@ void retro_run(void)
    // TODO: Poll input here.
 }
 
+static void deinit_program(void)
+{
+   if (g_thread)
+   {
+      g_thread_die = true;
+      sthread_join(g_thread);
+      g_thread        = NULL;
+      g_thread_die    = false;
+      g_thread_failed = false;
+   }
+
+   if (g_lock)
+   {
+      slock_free(g_lock);
+      g_lock = NULL;
+   }
+
+   if (g_dev)
+   {
+      libusb_release_interface(g_dev, 0);
+      libusb_attach_kernel_driver(g_dev, 0);
+      libusb_close(g_dev);
+      g_dev = NULL;
+   }
+
+   if (g_ctx)
+   {
+      libusb_exit(g_ctx);
+      g_ctx = NULL;
+   }
+}
+
 bool retro_load_game(const struct retro_game_info *info)
 {
    (void)info;
@@ -572,40 +604,13 @@ bool retro_load_game(const struct retro_game_info *info)
    return true;
 
 error:
-   retro_unload_game();
+   deinit_program();
    return false;
 }
 
 void retro_unload_game(void)
 {
-   if (g_thread)
-   {
-      g_thread_die = true;
-      sthread_join(g_thread);
-      g_thread        = NULL;
-      g_thread_die    = false;
-      g_thread_failed = false;
-   }
-
-   if (g_lock)
-   {
-      slock_free(g_lock);
-      g_lock = NULL;
-   }
-
-   if (g_dev)
-   {
-      libusb_release_interface(g_dev, 0);
-      libusb_attach_kernel_driver(g_dev, 0);
-      libusb_close(g_dev);
-      g_dev = NULL;
-   }
-
-   if (g_ctx)
-   {
-      libusb_exit(g_ctx);
-      g_ctx = NULL;
-   }
+   deinit_program();
 }
 
 unsigned retro_get_region(void)
