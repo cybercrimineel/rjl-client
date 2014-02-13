@@ -363,12 +363,8 @@ static bool handle_async(libusb_device_handle *dev)
    return true;
 }
 
-static void bulk_thread(void *dummy)
+static int usb_check_device(void)
 {
-   (void)dummy;
-
-   uint8_t buffer[512];
-
    uint8_t mag[4];
    write_le32(mag, HOSTFS_MAGIC);
    int transferred = 0;
@@ -380,12 +376,23 @@ static void bulk_thread(void *dummy)
       goto error;
    }
 
-   if (transferred < 4)
-   {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "Didn't really transfer 4 bytes, wut ...\n");
-      goto error;
-   }
+   if (transferred == 4)
+      return 0;
+
+   if (log_cb)
+      log_cb(RETRO_LOG_ERROR, "Didn't really transfer 4 bytes, wut ...\n");
+
+error:
+   return -1;
+}
+
+static void bulk_thread(void *dummy)
+{
+   (void)dummy;
+
+   uint8_t buffer[512];
+
+   usb_check_device();
 
    bool active = false;
 
@@ -419,28 +426,30 @@ static void bulk_thread(void *dummy)
       //   printf("0x%02x\n", buffer[i]);
 
       uint32_t code = read_le32(buffer + 0);
-      if (code == HOSTFS_MAGIC)
-      {
-         //printf("HOSTFS_MAGIC\n");
-         if (!handle_hello(g_dev))
-            goto error;
 
-         active = true;
-      }
-      else if (code == ASYNC_MAGIC)
+      switch(code)
       {
-         //printf("ASYNC_MAGIC\n");
-         if (!handle_async(g_dev))
-            goto error;
+         case HOSTFS_MAGIC:
+            //printf("HOSTFS_MAGIC\n");
+            if (!handle_hello(g_dev))
+               goto error;
+
+            active = true;
+            break;
+         case ASYNC_MAGIC:
+            //printf("ASYNC_MAGIC\n");
+            if (!handle_async(g_dev))
+               goto error;
+            break;
+         case BULK_MAGIC:
+            //printf("BULK_MAGIC\n");
+            if (!handle_bulk(g_dev, buffer, transferred))
+               goto error;
+            break;
+         default:
+            if (log_cb)
+               log_cb(RETRO_LOG_WARN, "Got other magic!\n");
       }
-      else if (code == BULK_MAGIC)
-      {
-         //printf("BULK_MAGIC\n");
-         if (!handle_bulk(g_dev, buffer, transferred))
-            goto error;
-      }
-      //else
-         //printf("Got other magic!\n");
    }
 
    return;
