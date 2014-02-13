@@ -473,7 +473,7 @@ void retro_get_system_info(struct retro_system_info *info)
    info->library_name     = "RemoteJoy";
    info->library_version  = "v1";
    info->need_fullpath    = false;
-   info->valid_extensions = NULL; // Anything is fine, we don't care.
+   info->valid_extensions = "exe"; // Anything is fine, we don't care.
 }
 
 void retro_get_system_av_info(struct retro_system_av_info *info)
@@ -587,23 +587,43 @@ bool retro_load_game(const struct retro_game_info *info)
    }
 
    if (libusb_init(&g_ctx) < 0)
+   {
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "libusb_init failed.\n");
       goto error;
+   }
 
    g_dev = libusb_open_device_with_vid_pid(g_ctx, SONY_VID, REMOTE_PID);
    if (!g_dev)
+   {
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "libusb_open_device_with_vid_pid failed.\n");
       goto error;
+   }
 
    if (libusb_kernel_driver_active(g_dev, 0))
    {
       if (libusb_detach_kernel_driver(g_dev, 0) < 0)
+      {
+         if (log_cb)
+            log_cb(RETRO_LOG_ERROR, "libusb_detach_kernel_driver failed.\n");
          goto error;
+      }
    }
 
    if (libusb_set_configuration(g_dev, 1) < 0)
+   {
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "libusb_set_configuration failed.\n");
       goto error;
+   }
 
    if (libusb_claim_interface(g_dev, 0) < 0)
+   {
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "libusb_claim_interface failed.\n");
       goto error;
+   }
 
    g_lock = slock_new();
    if (!g_lock)
