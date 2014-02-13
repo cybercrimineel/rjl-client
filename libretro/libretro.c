@@ -109,6 +109,13 @@ struct EventData
    struct JoyEvent event;
 } __attribute__((packed));
 
+static retro_log_printf_t log_cb;
+static retro_video_refresh_t video_cb;
+static retro_audio_sample_t audio_cb;
+static retro_audio_sample_batch_t audio_batch_cb;
+static retro_environment_t environ_cb;
+static retro_input_poll_t input_poll_cb;
+static retro_input_state_t input_state_cb;
 
 static uint32_t g_frame[PSP_WIDTH * PSP_HEIGHT];
 static uint32_t g_frame_buffer[PSP_WIDTH * PSP_HEIGHT];
@@ -154,7 +161,8 @@ static bool send_event(int type, int val1, int val2)
    int transferred;
    if (libusb_bulk_transfer(g_dev, 3, (uint8_t*)&data, sizeof(data), &transferred, 1000) < 0)
    {
-      fprintf(stderr, "send_event() failed.\n");
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "send_event() failed.\n");
       return false;
    }
 
@@ -173,7 +181,8 @@ static bool handle_hello(libusb_device_handle *dev)
    int transferred;
    if (libusb_bulk_transfer(dev, 2, (uint8_t*)&cmd, sizeof(cmd), &transferred, 1000) < 0)
    {
-      fprintf(stderr, "Failed hello :(\n");
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "Failed hello.\n");
       return false;
    }
 
@@ -188,7 +197,8 @@ static bool handle_hello(libusb_device_handle *dev)
 
    if (!send_event(TYPE_JOY_CMD, le32(arg1), le32(arg2)))
    {
-      fprintf(stderr, "Failed send_event in hello().\n"); 
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "send_event() failed in hello().\n");
       return false;
    }
 
@@ -361,13 +371,15 @@ static void bulk_thread(void *dummy)
    int ret = libusb_bulk_transfer(g_dev, 2, mag, sizeof(mag), &transferred, 1000);
    if (ret < 0)
    {
-      fprintf(stderr, "Failed to do magic init ... Error: %d\n", ret);
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "Failed to do magic init ... Error: %d\n", ret);
       goto error;
    }
 
    if (transferred < 4)
    {
-      fprintf(stderr, "Didn't really transfer 4 bytes, wut ...\n");
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "Didn't really transfer 4 bytes, wut ...\n");
       goto error;
    }
 
@@ -388,7 +400,8 @@ static void bulk_thread(void *dummy)
 
       if (ret < 0)
       {
-         fprintf(stderr, "Failed to do bulk with error: %d\n", ret);
+         if (log_cb)
+            log_cb(RETRO_LOG_ERROR, "Failed to do bulk with error: %d\n", ret);
 
          if (ret != LIBUSB_ERROR_TIMEOUT)
             goto error;
@@ -432,7 +445,13 @@ error:
 }
 
 void retro_init(void)
-{}
+{
+   struct retro_log_callback log;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log))
+      log_cb = log.log;
+   else
+      log_cb = NULL;
+}
 
 void retro_deinit(void)
 {}
@@ -472,12 +491,6 @@ void retro_get_system_av_info(struct retro_system_av_info *info)
    };
 }
 
-static retro_video_refresh_t video_cb;
-static retro_audio_sample_t audio_cb;
-static retro_audio_sample_batch_t audio_batch_cb;
-static retro_environment_t environ_cb;
-static retro_input_poll_t input_poll_cb;
-static retro_input_state_t input_state_cb;
 
 void retro_set_environment(retro_environment_t cb)
 {
@@ -568,7 +581,8 @@ bool retro_load_game(const struct retro_game_info *info)
    if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT,
             &(enum retro_pixel_format) { RETRO_PIXEL_FORMAT_XRGB8888 }))
    {
-      fprintf(stderr, "[RemoteJoy/libretro]: XRGB8888 isn't supported. Cannot continue ...\n");
+      if (log_cb)
+         log_cb(RETRO_LOG_ERROR, "XRGB8888 isn't supported. Cannot continue ...\n");
       goto error;
    }
 
