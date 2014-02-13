@@ -14,6 +14,7 @@
 // Magic stuff from RemoteJoy-Lite/Win32.
 #define SONY_VID 0x054c
 #define REMOTE_PID 0x01c9
+#define REMOTE_PID2 0x02d2
 
 #define TYPE_JOY_CMD 1
 #define TYPE_JOY_DAT 2
@@ -597,8 +598,16 @@ bool retro_load_game(const struct retro_game_info *info)
    if (!g_dev)
    {
       if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "libusb_open_device_with_vid_pid failed.\n");
-      goto error;
+         log_cb(RETRO_LOG_ERROR, "libusb_open_device_with_vid_pid failed, trying attempt 2...\n");
+
+      g_dev = libusb_open_device_with_vid_pid(g_ctx, SONY_VID, REMOTE_PID2);
+      
+      if (!g_dev)
+      {
+         if (log_cb)
+            log_cb(RETRO_LOG_ERROR, "libusb_open_device_with_vid_pid attempt 2 failed...\n");
+         goto error;
+      }
    }
 
    if (libusb_kernel_driver_active(g_dev, 0))
