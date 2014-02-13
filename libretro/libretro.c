@@ -316,6 +316,9 @@ static void process_bulk(const uint8_t *block, size_t size)
       case 0x03:
          texture_argb8888(block + sizeof(*header), le32(header->size));
          break;
+      default:
+         if (log_cb)
+            log_cb(RETRO_LOG_WARN, "Unknown header mode %d.\n", (header->mode >> 4) & 0x0f);
    }
 
    slock_unlock(g_lock);
