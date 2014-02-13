@@ -26,8 +26,16 @@
 #include <string.h>
 #include <time.h>
 
+#ifdef OS_LINUX
+#define TIMESPEC_TO_TIMEVAL(tv, ts) \
+ do { \
+ (tv)->tv_sec = (ts)->tv_sec; \
+ (tv)->tv_usec = (ts)->tv_nsec / 1000; \
+ } while (0)
+#else
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 #endif
 
 #ifdef USBI_TIMERFD_AVAILABLE
