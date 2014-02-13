@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
-#include <libusb-1.0/libusb.h>
+#include "libusb/libusb/libusb.h"
 
 #define PSP_WIDTH 480
 #define PSP_HEIGHT 272
