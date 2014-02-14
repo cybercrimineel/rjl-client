@@ -151,7 +151,7 @@ else
 CFLAGS += -O3
 endif
 
-SOURCES 	 := libretro/libretro.c thread.c
+SOURCES 	 := libretro/libretro.c libretro/remotejoy.c thread.c
 
 ifeq ($(LIBUSB), 1)
 SOURCES   += libusb/libusb/core.c \
