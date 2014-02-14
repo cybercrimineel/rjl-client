@@ -189,7 +189,7 @@ static bool handle_hello(libusb_device_handle *dev)
 
 static void texture_rgb565(const void *block_, size_t size)
 {
-   const uint16_t *block = block_;
+   const uint16_t *block = (const uint16_t*)block_;
    size >>= 1;
 
    if (size > PSP_WIDTH * PSP_HEIGHT)
@@ -210,7 +210,7 @@ static void texture_rgb565(const void *block_, size_t size)
 
 static void texture_argb1555(const void *block_, size_t size)
 {
-   const uint16_t *block = block_;
+   const uint16_t *block = (const uint16_t*)block_;
    size >>= 1;
 
    if (size > PSP_WIDTH * PSP_HEIGHT)
@@ -231,7 +231,7 @@ static void texture_argb1555(const void *block_, size_t size)
 
 static void texture_argb4444(const void *block_, size_t size)
 {
-   const uint16_t *block = block_;
+   const uint16_t *block = (const uint16_t*)block_;
    size >>= 1;
 
    if (size > PSP_WIDTH * PSP_HEIGHT)
@@ -252,7 +252,7 @@ static void texture_argb4444(const void *block_, size_t size)
 
 static void texture_argb8888(const void *block_, size_t size)
 {
-   const uint32_t *block = block_;
+   const uint32_t *block = (const uint32_t*)block_;
 
    size >>= 2;
    if (size > PSP_WIDTH * PSP_HEIGHT)
@@ -448,6 +448,7 @@ bool init_program(void)
    }
 
    g_dev = libusb_open_device_with_vid_pid(g_ctx, SONY_VID, REMOTE_PID);
+
    if (!g_dev)
    {
       if (log_cb)
