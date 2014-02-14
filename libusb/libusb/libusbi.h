@@ -42,12 +42,9 @@
  *   return_type LIBUSB_CALL function_name(params);
  */
 #ifdef __LIBRETRO__
-#define API_EXPORTED
-#define LIBUSB_CALL
 #define DEFAULT_VISIBILITY
-#else
-#define API_EXPORTED LIBUSB_CALL DEFAULT_VISIBILITY
 #endif
+#define API_EXPORTED LIBUSB_CALL DEFAULT_VISIBILITY
 
 #define DEVICE_DESC_LENGTH		18
 
