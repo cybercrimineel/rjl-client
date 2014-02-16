@@ -466,12 +466,14 @@ bool init_program(void)
 
    if (libusb_kernel_driver_active(g_dev, 0))
    {
+#ifndef __WIN32__
       if (libusb_detach_kernel_driver(g_dev, 0) < 0)
       {
          if (log_cb)
             log_cb(RETRO_LOG_ERROR, "libusb_detach_kernel_driver failed.\n");
          goto error;
       }
+#endif
    }
 
    if (libusb_set_configuration(g_dev, 1) < 0)
