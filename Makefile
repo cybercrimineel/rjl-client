@@ -38,16 +38,16 @@ ifeq ($(platform), unix)
    TARGET := $(TARGET_NAME)_libretro.so
    fpic := -fPIC
    SHARED := -shared -Wl,--version-script=libretro/link.T
-	LIBUSB = 1
-	LIBUSB_LINUX = 1
-	LIBUSB_CFLAGS += -DOS_LINUX -DTHREADS_POSIX -DPOLL_NFDS_TYPE=nfds_t -pthread -DHAVE_POLL_H -DHAVE_GETTIMEOFDAY -DHAVE_SYS_TIME_H
+   LIBUSB = 1
+   LIBUSB_LINUX = 1
+   LIBUSB_CFLAGS += -DOS_LINUX -DTHREADS_POSIX -DPOLL_NFDS_TYPE=nfds_t -pthread -DHAVE_POLL_H -DHAVE_GETTIMEOFDAY -DHAVE_SYS_TIME_H
 else ifeq ($(platform), osx)
    TARGET := $(TARGET_NAME)_libretro.dylib
    fpic := -fPIC -mmacosx-version-min=10.6
-   SHARED := -dynamiclib
-	LIBUSB = 1
-	LIBUSB_DARWIN = 1
-	LIBUSB_CFLAGS += -DOS_DARWIN
+   SHARED := -dynamiclib -lobjc -Wl,-framework,IOKit -Wl,-framework,CoreFoundation
+   LIBUSB = 1
+   LIBUSB_DARWIN = 1
+   LIBUSB_CFLAGS += -DOS_DARWIN -DTHREADS_POSIX -DHAVE_GETTIMEOFDAY -DHAVE_SYS_TIME_H -DPOLL_NFDS_TYPE=nfds_t -DHAVE_POLL_H -pthread
 else ifeq ($(platform), ios)
    TARGET := $(TARGET_NAME)_libretro_ios.dylib
    fpic := -fPIC
