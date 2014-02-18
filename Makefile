@@ -51,10 +51,13 @@ else ifeq ($(platform), osx)
 else ifeq ($(platform), ios)
    TARGET := $(TARGET_NAME)_libretro_ios.dylib
    fpic := -fPIC
-   SHARED := -dynamiclib
+   SHARED := -dynamiclib -lobjc -Wl,-framework,IOKit -Wl,-framework,CoreFoundation
 
    CC = clang -arch armv7 -isysroot $(IOSSDK) -miphoneos-version-min=5.0
    CFLAGS += -DIOS -miphoneos-version-min=5.0
+   LIBUSB = 1
+   LIBUSB_DARWIN = 1
+   LIBUSB_CFLAGS += -DOS_DARWIN -DTHREADS_POSIX -DHAVE_GETTIMEOFDAY -DHAVE_SYS_TIME_H -DPOLL_NFDS_TYPE=nfds_t -DHAVE_POLL_H -pthread
 else ifeq ($(platform), qnx)
    TARGET := $(TARGET_NAME)_libretro_qnx.so
    fpic := -fPIC
