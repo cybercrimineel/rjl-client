@@ -43,21 +43,30 @@ ifeq ($(platform), unix)
    LIBUSB_CFLAGS += -DOS_LINUX -DTHREADS_POSIX -DPOLL_NFDS_TYPE=nfds_t -pthread -DHAVE_POLL_H -DHAVE_GETTIMEOFDAY -DHAVE_SYS_TIME_H
 else ifeq ($(platform), osx)
    TARGET := $(TARGET_NAME)_libretro.dylib
-   fpic := -fPIC -mmacosx-version-min=10.6
+   fpic := -fPIC
    SHARED := -dynamiclib -lobjc -Wl,-framework,IOKit -Wl,-framework,CoreFoundation
    LIBUSB = 1
    LIBUSB_DARWIN = 1
    LIBUSB_CFLAGS += -DOS_DARWIN -DTHREADS_POSIX -DHAVE_GETTIMEOFDAY -DHAVE_SYS_TIME_H -DPOLL_NFDS_TYPE=nfds_t -DHAVE_POLL_H -pthread
+OSXVER = `sw_vers -productVersion | cut -c 4`
+ifneq ($(OSXVER),9)
+   fpic += -mmacosx-version-min=10.5
+endif
 else ifeq ($(platform), ios)
    TARGET := $(TARGET_NAME)_libretro_ios.dylib
    fpic := -fPIC
    SHARED := -dynamiclib -lobjc -Wl,-framework,IOKit -Wl,-framework,CoreFoundation
 
-   CC = clang -arch armv7 -isysroot $(IOSSDK) -miphoneos-version-min=5.0
-   CFLAGS += -DIOS -miphoneos-version-min=5.0
+   CC = clang -arch armv7 -isysroot $(IOSSDK)
+   CFLAGS += -DIOS
    LIBUSB = 1
    LIBUSB_DARWIN = 1
    LIBUSB_CFLAGS += -DOS_DARWIN -DTHREADS_POSIX -DHAVE_GETTIMEOFDAY -DHAVE_SYS_TIME_H -DPOLL_NFDS_TYPE=nfds_t -DHAVE_POLL_H -pthread
+OSXVER = `sw_vers -productVersion | cut -c 4`
+ifneq ($(OSXVER),9)
+   CC += -miphoneos-version-min=5.0
+   CFLAGS += -miphoneos-version-min=5.0
+endif
 else ifeq ($(platform), qnx)
    TARGET := $(TARGET_NAME)_libretro_qnx.so
    fpic := -fPIC
