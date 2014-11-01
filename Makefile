@@ -170,32 +170,12 @@ else
 CFLAGS += -O3
 endif
 
-SOURCES 	 := libretro/libretro.c libretro/remotejoy.c libretro/thread.c
+CORE_DIR   := .
 
-ifeq ($(LIBUSB), 1)
-SOURCES   += libusb/libusb/core.c \
-				 libusb/libusb/descriptor.c \
-				 libusb/libusb/io.c \
-				 libusb/libusb/sync.c
-ifeq ($(LIBUSB_LINUX), 1)
-SOURCES   += libusb/libusb/os/linux_usbfs.c \
-				 libusb/libusb/os/threads_posix.c
-endif
-ifeq ($(LIBUSB_DARWIN), 1)
-SOURCES   += libusb/libusb/os/darwin_usb.c \
-				 libusb/libusb/os/threads_posix.c
-endif
-ifeq ($(LIBUSB_WINDOWS), 1)
-SOURCES   += libusb/libusb/os/poll_windows.c \
-				 libusb/libusb/os/threads_windows.c \
-				 libusb/libusb/os/windows_usb.c
-endif
-endif
+include Makefile.common
 
+OBJECTS    = $(SOURCES_C:.c=.o)
 
-OBJECTS    = $(SOURCES:.c=.o)
-
-INCLUDES   = -I. -I.. -Ilibusb/libusb
 DEFINES    = -DHAVE_STRINGS_H -DHAVE_STDINT_H -DHAVE_INTTYPES_H -D__LIBRETRO__ -DINLINE=inline $(LIBUSB_CFLAGS)
 
 ifeq ($(platform), sncps3)
@@ -223,11 +203,11 @@ $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
 	$(AR) rcs $@ $(OBJECTS)
 else
-	$(CC) $(fpic) $(SHARED) $(INCLUDES) -o $@ $(OBJECTS) -lm
+	$(CC) $(fpic) $(SHARED) $(INCFLAGS) -o $@ $(OBJECTS) -lm
 endif
 
 %.o: %.c
-	$(CC) $(INCLUDES) $(CFLAGS) -c -o $@ $<
+	$(CC) $(INCFLAGS) $(CFLAGS) -c -o $@ $<
 
 clean-objs:
 	rm -rf $(OBJECTS)
