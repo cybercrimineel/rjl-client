@@ -29,8 +29,8 @@ else ifneq ($(findstring MINGW,$(shell uname -a)),)
    system_platform = win
 endif
 
-#CC         = gcc
 TARGET_NAME := remotejoy
+LIBM        := -lm
 
 LIBUSB_CFLAGS := -DLIBUSB_DESCRIBE=\"\" -DLIBUSB_MAJOR=1 -DLIBUSB_MINOR=1 -DLIBUSB_MICRO=1 -DLIBUSB_RC=\"\" -DENABLE_LOGGING 
 
@@ -41,6 +41,15 @@ ifeq ($(platform), unix)
    LIBUSB = 1
    LIBUSB_LINUX = 1
    LIBUSB_CFLAGS += -DOS_LINUX -DTHREADS_POSIX -DPOLL_NFDS_TYPE=nfds_t -pthread -DHAVE_POLL_H -DHAVE_GETTIMEOFDAY -DHAVE_SYS_TIME_H
+else ifeq ($(platform), linux-portable)
+   TARGET := $(TARGET_NAME)_libretro.so
+   fpic := -fPIC -nostdlib
+   SHARED := -shared -Wl,--version-script=libretro/link.T
+   LIBUSB = 1
+   LIBUSB_LINUX = 1
+   LIBUSB_CFLAGS += -DOS_LINUX -DTHREADS_POSIX -DPOLL_NFDS_TYPE=nfds_t -pthread -DHAVE_POLL_H -DHAVE_GETTIMEOFDAY -DHAVE_SYS_TIME_H
+	LIBM :=
+	LDFLAGS += -L. -lmusl
 else ifeq ($(platform), osx)
    TARGET := $(TARGET_NAME)_libretro.dylib
    fpic := -fPIC
@@ -161,6 +170,8 @@ else
 	LIBUSB_CFLAGS += -DOS_WINDOWS -DHAVE_GETTIMEOFDAY -DHAVE_INTTYPES_H -DHAVE_MEMORY_H -DHAVE_STDINT_H -DHAVE_STDLIB_H -DHAVE_STRINGS_H -DHAVE_STRING_H -DHAVE_SYS_STAT_H -DHAVE_SYS_TIME_H -DHAVE_SYS_TYPES_H -DHAVE_UNISTD_H -DPOLL_NFDS_TYPE='unsigned int' -DSTDC_HEADERS -D_GNU_SOURCE
 endif
 
+LDFLAGS += $(LIBM)
+
 ifeq ($(DEBUG), 1)
 CFLAGS += -O0 -g
 LIBUSB_CFLAGS += -DENABLE_DEBUG_LOGGING 
@@ -203,7 +214,7 @@ $(TARGET): $(OBJECTS)
 ifeq ($(STATIC_LINKING), 1)
 	$(AR) rcs $@ $(OBJECTS)
 else
-	$(CC) $(fpic) $(SHARED) $(INCFLAGS) -o $@ $(OBJECTS) -lm
+	$(CC) $(fpic) $(SHARED) $(INCFLAGS) -o $@ $(OBJECTS) $(LDFLAGS)
 endif
 
 %.o: %.c
