@@ -49,7 +49,6 @@ else ifeq ($(platform), linux-portable)
    LIBUSB_LINUX = 1
    LIBUSB_CFLAGS += -DOS_LINUX -DTHREADS_POSIX -DPOLL_NFDS_TYPE=nfds_t -pthread -DHAVE_POLL_H -DHAVE_GETTIMEOFDAY -DHAVE_SYS_TIME_H
 	LIBM :=
-	LDFLAGS += -L. -lmusl
 else ifeq ($(platform), osx)
    TARGET := $(TARGET_NAME)_libretro.dylib
    fpic := -fPIC
