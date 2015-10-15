@@ -68,14 +68,15 @@ ifeq ($(IOSSDK),)
    IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
 endif
 
-   CC = clang -arch armv7 -isysroot $(IOSSDK)
+   CC = cc -arch armv7 -isysroot $(IOSSDK)
    CFLAGS += -DIOS
    LIBUSB = 1
    LIBUSB_DARWIN = 1
    LIBUSB_CFLAGS += -DOS_DARWIN -DTHREADS_POSIX -DHAVE_GETTIMEOFDAY -DHAVE_SYS_TIME_H -DPOLL_NFDS_TYPE=nfds_t -DHAVE_POLL_H -pthread
-   OSXVER = `sw_vers -productVersion | cut -d. -f 2`
-   OSX_LT_MAVERICKS = `(( $(OSXVER) <= 9)) && echo "YES"`
-ifeq ($(OSX_LT_MAVERICKS),"YES")
+ifeq ($(platform),ios9)
+   CC += -miphoneos-version-min=8.0
+   CFLAGS += -miphoneos-version-min=8.0
+else
    CC += -miphoneos-version-min=5.0
    CFLAGS += -miphoneos-version-min=5.0
 endif
