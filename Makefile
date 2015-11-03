@@ -30,7 +30,7 @@ else ifneq ($(findstring MINGW,$(shell uname -a)),)
 endif
 
 TARGET_NAME := remotejoy
-LIBM        := -lm
+LIBM        := 
 
 LIBUSB_CFLAGS := -DLIBUSB_DESCRIBE=\"\" -DLIBUSB_MAJOR=1 -DLIBUSB_MINOR=1 -DLIBUSB_MICRO=1 -DLIBUSB_RC=\"\" -DENABLE_LOGGING 
 
