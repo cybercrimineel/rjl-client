@@ -158,8 +158,7 @@ static bool send_event(int type, int val1, int val2)
    int transferred;
    if (libusb_bulk_transfer(g_dev, 3, (uint8_t *)&data, sizeof(data), &transferred, 1000) < 0)
    {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "send_event() failed.\n");
+      puts("send_event() failed.");
       return false;
    }
 
@@ -178,8 +177,7 @@ static bool handle_hello(libusb_device_handle *dev)
    int transferred;
    if (libusb_bulk_transfer(dev, 2, (uint8_t *)&cmd, sizeof(cmd), &transferred, 1000) < 0)
    {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "Failed hello.\n");
+      puts("Failed hello.");
       return false;
    }
 
@@ -194,8 +192,7 @@ static bool handle_hello(libusb_device_handle *dev)
 
    if (!send_event(TYPE_JOY_CMD, le32(arg1), le32(arg2)))
    {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "send_event() failed in hello().\n");
+      puts("send_event() failed in hello().");
       return false;
    }
 
@@ -313,8 +310,7 @@ static void process_bulk(const uint8_t *block, size_t size)
       texture_argb8888(block + sizeof(*header), le32(header->size));
       break;
    default:
-      if (log_cb)
-         log_cb(RETRO_LOG_WARN, "Unknown header mode %d.\n", (header->mode >> 4) & 0x0f);
+      printf("Unknown header mode %d.\n", (header->mode >> 4) & 0x0f);
    }
 
    slock_unlock(g_lock);
@@ -367,16 +363,14 @@ static int usb_check_device(void)
    int ret = libusb_bulk_transfer(g_dev, 2, mag, sizeof(mag), &transferred, 1000);
    if (ret < 0)
    {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "Failed to do magic init ... Error: %d\n", ret);
+      printf("Failed to do magic init ... Error: %d", ret);
       goto error;
    }
 
    if (transferred == 4)
       return 0;
 
-   if (log_cb)
-      log_cb(RETRO_LOG_ERROR, "Didn't really transfer 4 bytes, wut ...\n");
+   puts("Didn't really transfer 4 bytes, wut ...");
 
 error:
    return -1;
@@ -407,8 +401,7 @@ static void bulk_thread(void *dummy)
 
       if (ret < 0)
       {
-         if (log_cb)
-            log_cb(RETRO_LOG_ERROR, "Failed to do bulk with error: %d\n", ret);
+         printf("Failed to do bulk with error: %d\n", ret);
 
          if (ret != LIBUSB_ERROR_TIMEOUT)
             goto error;
@@ -443,8 +436,7 @@ static void bulk_thread(void *dummy)
             goto error;
          break;
       default:
-         if (log_cb)
-            log_cb(RETRO_LOG_WARN, "Got other magic!\n");
+         puts("Got other magic!");
       }
    }
 
@@ -457,8 +449,7 @@ bool init_program(void)
 {
    if (libusb_init(&g_ctx) < 0)
    {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "libusb_init failed.\n");
+      puts("libusb_init failed.");
       goto error;
    }
 
@@ -466,15 +457,13 @@ bool init_program(void)
 
    if (!g_dev)
    {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "libusb_open_device_with_vid_pid failed, trying attempt 2...\n");
+      puts("libusb_open_device_with_vid_pid failed, trying attempt 2...");
 
       g_dev = libusb_open_device_with_vid_pid(g_ctx, SONY_VID, REMOTE_PID2);
 
       if (!g_dev)
       {
-         if (log_cb)
-            log_cb(RETRO_LOG_ERROR, "libusb_open_device_with_vid_pid attempt 2 failed...\n");
+         puts("libusb_open_device_with_vid_pid attempt 2 failed...");
          goto error;
       }
    }
@@ -484,8 +473,7 @@ bool init_program(void)
 #ifndef __WIN32__
       if (libusb_detach_kernel_driver(g_dev, 0) < 0)
       {
-         if (log_cb)
-            log_cb(RETRO_LOG_ERROR, "libusb_detach_kernel_driver failed.\n");
+         puts("libusb_detach_kernel_driver failed.");
          goto error;
       }
 #endif
@@ -493,15 +481,13 @@ bool init_program(void)
 
    if (libusb_set_configuration(g_dev, 1) < 0)
    {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "libusb_set_configuration failed.\n");
+      puts("libusb_set_configuration failed.");
       goto error;
    }
 
    if (libusb_claim_interface(g_dev, 0) < 0)
    {
-      if (log_cb)
-         log_cb(RETRO_LOG_ERROR, "libusb_claim_interface failed.\n");
+      puts("libusb_claim_interface failed.");
       goto error;
    }
 
