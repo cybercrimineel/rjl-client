@@ -9,43 +9,43 @@
 #define ASYNC_CMD_DEBUG 1
 
 #define HOSTFS_MAGIC 0x782f0812
-#define ASYNC_MAGIC  0x782f0813
-#define BULK_MAGIC   0x782f0814
-#define JOY_MAGIC    0x909accef
-#define RJL_VERSION				190
-#define HOSTFS_CMD_HELLO(ver)	((0x8ffc << 16) | (ver))
+#define ASYNC_MAGIC 0x782f0813
+#define BULK_MAGIC 0x782f0814
+#define JOY_MAGIC 0x909accef
+#define RJL_VERSION 190
+#define HOSTFS_CMD_HELLO(ver) ((0x8ffc << 16) | (ver))
 
 /* Screen commands */
-#define SCREEN_CMD_ACTIVE		(1 << 0)
-#define SCREEN_CMD_SCROFF		(1 << 1)
-#define SCREEN_CMD_DEBUG		(1 << 2)
-#define SCREEN_CMD_ASYNC		(1 << 3)
+#define SCREEN_CMD_ACTIVE (1 << 0)
+#define SCREEN_CMD_SCROFF (1 << 1)
+#define SCREEN_CMD_DEBUG (1 << 2)
+#define SCREEN_CMD_ASYNC (1 << 3)
 
 /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ */
 /* |    ADRESS2    |    ADRESS1    |  PRIORITY |  MODE |FPS|A|D|S|A| */
 /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ */
-#define SCREEN_CMD_SET_TRNSFPS(x)	((x) << 4)
-#define SCREEN_CMD_GET_TRNSFPS(x)	(((x) >> 4) & 0x03)
-#define SCREEN_CMD_SET_TRNSMODE(x)	((x) << 6)
-#define SCREEN_CMD_GET_TRNSMODE(x)	(((x) >> 6) & 0x0f)
-#define SCREEN_CMD_SET_PRIORITY(x)	((x) << 10)
-#define SCREEN_CMD_GET_PRIORITY(x)	(((x) >> 10) & 0x3f)
-#define SCREEN_CMD_SET_ADRESS1(x)	((x) << 16)
-#define SCREEN_CMD_GET_ADRESS1(x)	(((x) >> 16) & 0xFF)
-#define SCREEN_CMD_SET_ADRESS2(x)	((x) << 24)
-#define SCREEN_CMD_GET_ADRESS2(x)	(((x) >> 24) & 0xFF)
+#define SCREEN_CMD_SET_TRNSFPS(x) ((x) << 4)
+#define SCREEN_CMD_GET_TRNSFPS(x) (((x) >> 4) & 0x03)
+#define SCREEN_CMD_SET_TRNSMODE(x) ((x) << 6)
+#define SCREEN_CMD_GET_TRNSMODE(x) (((x) >> 6) & 0x0f)
+#define SCREEN_CMD_SET_PRIORITY(x) ((x) << 10)
+#define SCREEN_CMD_GET_PRIORITY(x) (((x) >> 10) & 0x3f)
+#define SCREEN_CMD_SET_ADRESS1(x) ((x) << 16)
+#define SCREEN_CMD_GET_ADRESS1(x) (((x) >> 16) & 0xFF)
+#define SCREEN_CMD_SET_ADRESS2(x) ((x) << 24)
+#define SCREEN_CMD_GET_ADRESS2(x) (((x) >> 24) & 0xFF)
 
 /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ */
 /* |      TRNSH      |    TRNSW    |      TRNSY      |    TRNSX    | */
 /* +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ */
-#define SCREEN_CMD_SET_TRNSX(x)		((x) << 0)
-#define SCREEN_CMD_GET_TRNSX(x)		(((x) >> 0) & 0x7f)
-#define SCREEN_CMD_SET_TRNSY(x)		((x) << 7)
-#define SCREEN_CMD_GET_TRNSY(x)		(((x) >> 7) & 0x1ff)
-#define SCREEN_CMD_SET_TRNSW(x)		((x) << 16)
-#define SCREEN_CMD_GET_TRNSW(x)		(((x) >> 16) & 0x7f)
-#define SCREEN_CMD_SET_TRNSH(x)		((x) << 23)
-#define SCREEN_CMD_GET_TRNSH(x)		(((x) >> 23) & 0x1ff)
+#define SCREEN_CMD_SET_TRNSX(x) ((x) << 0)
+#define SCREEN_CMD_GET_TRNSX(x) (((x) >> 0) & 0x7f)
+#define SCREEN_CMD_SET_TRNSY(x) ((x) << 7)
+#define SCREEN_CMD_GET_TRNSY(x) (((x) >> 7) & 0x1ff)
+#define SCREEN_CMD_SET_TRNSW(x) ((x) << 16)
+#define SCREEN_CMD_GET_TRNSW(x) (((x) >> 16) & 0x7f)
+#define SCREEN_CMD_SET_TRNSH(x) ((x) << 23)
+#define SCREEN_CMD_GET_TRNSH(x) (((x) >> 23) & 0x1ff)
 
 #define PSP_WIDTH 480
 #define PSP_HEIGHT 272
@@ -111,7 +111,7 @@ static volatile sig_atomic_t g_thread_failed;
 static uint32_t g_frame[PSP_WIDTH * PSP_HEIGHT];
 static uint32_t g_frame_buffer[PSP_WIDTH * PSP_HEIGHT];
 static sthread_t *g_thread;
-static slock_t   *g_lock;
+static slock_t *g_lock;
 
 static libusb_context *g_ctx;
 static libusb_device_handle *g_dev;
@@ -123,8 +123,8 @@ static inline uint32_t read_le32(const uint8_t *buf)
 
 static inline void write_le32(uint8_t *buf, uint32_t val)
 {
-   buf[0] = (uint8_t)(val >>  0);
-   buf[1] = (uint8_t)(val >>  8);
+   buf[0] = (uint8_t)(val >> 0);
+   buf[1] = (uint8_t)(val >> 8);
    buf[2] = (uint8_t)(val >> 16);
    buf[3] = (uint8_t)(val >> 24);
 }
@@ -143,20 +143,20 @@ static bool send_event(int type, int val1, int val2)
 {
    //printf("Sending event ...\n");
    struct EventData data = {
-      .async = {
-         .magic   = le32(ASYNC_MAGIC),
-         .channel = le32(ASYNC_USER),
-      },
-      .event = {
-         .magic  = JOY_MAGIC,
-         .type   = type,
-         .value1 = val1,
-         .value2 = val2,
-      },
+       .async = {
+           .magic = le32(ASYNC_MAGIC),
+           .channel = le32(ASYNC_USER),
+       },
+       .event = {
+           .magic = JOY_MAGIC,
+           .type = type,
+           .value1 = val1,
+           .value2 = val2,
+       },
    };
 
    int transferred;
-   if (libusb_bulk_transfer(g_dev, 3, (uint8_t*)&data, sizeof(data), &transferred, 1000) < 0)
+   if (libusb_bulk_transfer(g_dev, 3, (uint8_t *)&data, sizeof(data), &transferred, 1000) < 0)
    {
       if (log_cb)
          log_cb(RETRO_LOG_ERROR, "send_event() failed.\n");
@@ -171,12 +171,12 @@ static bool handle_hello(libusb_device_handle *dev)
    //printf("Handling hello!\n");
 
    struct HostFsCmd cmd = {
-      .magic   = le32(HOSTFS_MAGIC),
-      .command = le32(HOSTFS_CMD_HELLO(RJL_VERSION)),
+       .magic = le32(HOSTFS_MAGIC),
+       .command = le32(HOSTFS_CMD_HELLO(RJL_VERSION)),
    };
 
    int transferred;
-   if (libusb_bulk_transfer(dev, 2, (uint8_t*)&cmd, sizeof(cmd), &transferred, 1000) < 0)
+   if (libusb_bulk_transfer(dev, 2, (uint8_t *)&cmd, sizeof(cmd), &transferred, 1000) < 0)
    {
       if (log_cb)
          log_cb(RETRO_LOG_ERROR, "Failed hello.\n");
@@ -204,7 +204,7 @@ static bool handle_hello(libusb_device_handle *dev)
 
 static void texture_rgb565(const void *block_, size_t size)
 {
-   const uint16_t *block = (const uint16_t*)block_;
+   const uint16_t *block = (const uint16_t *)block_;
    size >>= 1;
 
    if (size > PSP_WIDTH * PSP_HEIGHT)
@@ -213,8 +213,8 @@ static void texture_rgb565(const void *block_, size_t size)
    for (size_t i = 0; i < size; i++)
    {
       uint16_t col = block[i];
-      uint32_t r = (col >>  0) & 0x1f;
-      uint32_t g = (col >>  5) & 0x3f;
+      uint32_t r = (col >> 0) & 0x1f;
+      uint32_t g = (col >> 5) & 0x3f;
       uint32_t b = (col >> 11) & 0x1f;
       r = (r << 3) | (r >> 2);
       g = (g << 2) | (g >> 4);
@@ -225,7 +225,7 @@ static void texture_rgb565(const void *block_, size_t size)
 
 static void texture_argb1555(const void *block_, size_t size)
 {
-   const uint16_t *block = (const uint16_t*)block_;
+   const uint16_t *block = (const uint16_t *)block_;
    size >>= 1;
 
    if (size > PSP_WIDTH * PSP_HEIGHT)
@@ -234,8 +234,8 @@ static void texture_argb1555(const void *block_, size_t size)
    for (size_t i = 0; i < size; i++)
    {
       uint16_t col = block[i];
-      uint32_t r = (col >>  0) & 0x1f;
-      uint32_t g = (col >>  5) & 0x1f;
+      uint32_t r = (col >> 0) & 0x1f;
+      uint32_t g = (col >> 5) & 0x1f;
       uint32_t b = (col >> 10) & 0x1f;
       r = (r << 3) | (r >> 2);
       g = (g << 3) | (g >> 2);
@@ -246,7 +246,7 @@ static void texture_argb1555(const void *block_, size_t size)
 
 static void texture_argb4444(const void *block_, size_t size)
 {
-   const uint16_t *block = (const uint16_t*)block_;
+   const uint16_t *block = (const uint16_t *)block_;
    size >>= 1;
 
    if (size > PSP_WIDTH * PSP_HEIGHT)
@@ -255,9 +255,9 @@ static void texture_argb4444(const void *block_, size_t size)
    for (size_t i = 0; i < size; i++)
    {
       uint16_t col = block[i];
-      uint32_t r = (col >>  0) & 0x0f;
-      uint32_t g = (col >>  4) & 0x0f;
-      uint32_t b = (col >>  8) & 0x0f;
+      uint32_t r = (col >> 0) & 0x0f;
+      uint32_t g = (col >> 4) & 0x0f;
+      uint32_t b = (col >> 8) & 0x0f;
       r = (r << 4) | (r >> 0);
       g = (g << 4) | (g >> 0);
       b = (b << 4) | (b >> 0);
@@ -267,7 +267,7 @@ static void texture_argb4444(const void *block_, size_t size)
 
 static void texture_argb8888(const void *block_, size_t size)
 {
-   const uint32_t *block = (const uint32_t*)block_;
+   const uint32_t *block = (const uint32_t *)block_;
 
    size >>= 2;
    if (size > PSP_WIDTH * PSP_HEIGHT)
@@ -276,8 +276,8 @@ static void texture_argb8888(const void *block_, size_t size)
    for (size_t i = 0; i < size; i++)
    {
       uint32_t col = block[i];
-      uint32_t r = (col >>  0) & 0xff;
-      uint32_t g = (col >>  8) & 0xff;
+      uint32_t r = (col >> 0) & 0xff;
+      uint32_t g = (col >> 8) & 0xff;
       uint32_t b = (col >> 16) & 0xff;
       uint32_t a = (col >> 24) & 0xff;
       g_frame[i] = (r << 16) | (g << 8) | (b << 0) | (a << 24);
@@ -286,7 +286,7 @@ static void texture_argb8888(const void *block_, size_t size)
 
 static void process_bulk(const uint8_t *block, size_t size)
 {
-   struct JoyScrHeader *header = (struct JoyScrHeader*)block;
+   struct JoyScrHeader *header = (struct JoyScrHeader *)block;
    //printf("Buff mode: %u\n", le32(header->mode));
    //printf("VCount: %d\n", le32(header->ref));
    //printf("Size: %d\n", le32(header->size));
@@ -297,24 +297,24 @@ static void process_bulk(const uint8_t *block, size_t size)
 
    switch ((header->mode >> 4) & 0x0f)
    {
-      case 0x00:
-         texture_rgb565(block + sizeof(*header), le32(header->size));
-         break;
+   case 0x00:
+      texture_rgb565(block + sizeof(*header), le32(header->size));
+      break;
 
-      case 0x01:
-         texture_argb1555(block + sizeof(*header), le32(header->size));
-         break;
+   case 0x01:
+      texture_argb1555(block + sizeof(*header), le32(header->size));
+      break;
 
-      case 0x02:
-         texture_argb4444(block + sizeof(*header), le32(header->size));
-         break;
+   case 0x02:
+      texture_argb4444(block + sizeof(*header), le32(header->size));
+      break;
 
-      case 0x03:
-         texture_argb8888(block + sizeof(*header), le32(header->size));
-         break;
-      default:
-         if (log_cb)
-            log_cb(RETRO_LOG_WARN, "Unknown header mode %d.\n", (header->mode >> 4) & 0x0f);
+   case 0x03:
+      texture_argb8888(block + sizeof(*header), le32(header->size));
+      break;
+   default:
+      if (log_cb)
+         log_cb(RETRO_LOG_WARN, "Unknown header mode %d.\n", (header->mode >> 4) & 0x0f);
    }
 
    slock_unlock(g_lock);
@@ -328,7 +328,7 @@ static bool handle_bulk(libusb_device_handle *dev, uint8_t *data, size_t size)
    if (size < sizeof(struct BulkCommand))
       return false;
 
-   struct BulkCommand *cmd = (struct BulkCommand*)data;
+   struct BulkCommand *cmd = (struct BulkCommand *)data;
    size_t read_size = 0;
    size_t data_size = le32(cmd->size);
    //printf("Data size: %zu\n", data_size);
@@ -341,7 +341,7 @@ static bool handle_bulk(libusb_device_handle *dev, uint8_t *data, size_t size)
 
       int transferred = 0;
       int ret = libusb_bulk_transfer(dev, 0x01 | LIBUSB_ENDPOINT_IN,
-            bulk_block + read_size, to_read, &transferred, 3000);
+                                     bulk_block + read_size, to_read, &transferred, 3000);
 
       if (ret < 0)
          return false;
@@ -403,7 +403,7 @@ static void bulk_thread(void *dummy)
 
       int transferred = 0;
       int ret = libusb_bulk_transfer(g_dev, 0x01 | LIBUSB_ENDPOINT_IN,
-            buffer, sizeof(buffer), &transferred, 1000);
+                                     buffer, sizeof(buffer), &transferred, 1000);
 
       if (ret < 0)
       {
@@ -423,28 +423,28 @@ static void bulk_thread(void *dummy)
 
       uint32_t code = read_le32(buffer + 0);
 
-      switch(code)
+      switch (code)
       {
-         case HOSTFS_MAGIC:
-            //printf("HOSTFS_MAGIC\n");
-            if (!handle_hello(g_dev))
-               goto error;
+      case HOSTFS_MAGIC:
+         //printf("HOSTFS_MAGIC\n");
+         if (!handle_hello(g_dev))
+            goto error;
 
-            active = true;
-            break;
-         case ASYNC_MAGIC:
-            //printf("ASYNC_MAGIC\n");
-            if (!handle_async(g_dev))
-               goto error;
-            break;
-         case BULK_MAGIC:
-            //printf("BULK_MAGIC\n");
-            if (!handle_bulk(g_dev, buffer, transferred))
-               goto error;
-            break;
-         default:
-            if (log_cb)
-               log_cb(RETRO_LOG_WARN, "Got other magic!\n");
+         active = true;
+         break;
+      case ASYNC_MAGIC:
+         //printf("ASYNC_MAGIC\n");
+         if (!handle_async(g_dev))
+            goto error;
+         break;
+      case BULK_MAGIC:
+         //printf("BULK_MAGIC\n");
+         if (!handle_bulk(g_dev, buffer, transferred))
+            goto error;
+         break;
+      default:
+         if (log_cb)
+            log_cb(RETRO_LOG_WARN, "Got other magic!\n");
       }
    }
 
@@ -510,7 +510,7 @@ bool init_program(void)
       goto error;
 
    g_thread_failed = false;
-   g_thread_die    = false;
+   g_thread_die = false;
    g_thread = sthread_create(bulk_thread, NULL);
    if (!g_thread)
       goto error;
@@ -527,8 +527,8 @@ void deinit_program(void)
    {
       g_thread_die = true;
       sthread_join(g_thread);
-      g_thread        = NULL;
-      g_thread_die    = false;
+      g_thread = NULL;
+      g_thread_die = false;
       g_thread_failed = false;
    }
 
