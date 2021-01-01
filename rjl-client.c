@@ -3,6 +3,8 @@
 #include <string.h>
 #include <signal.h>
 #include "libusb-1.0.24/libusb/libusb.h"
+#include "SDL2-2.0.14/include/SDL.h"
+#include "SDL2-2.0.14/include/SDL_render.h"
 
 #define TYPE_JOY_CMD 1
 #define TYPE_JOY_DAT 2
@@ -111,7 +113,6 @@ static volatile sig_atomic_t g_thread_failed;
 static uint32_t g_frame[PSP_WIDTH * PSP_HEIGHT];
 static uint32_t g_frame_buffer[PSP_WIDTH * PSP_HEIGHT];
 static sthread_t *g_thread;
-static slock_t *g_lock;
 
 static libusb_context *g_ctx;
 static libusb_device_handle *g_dev;
@@ -138,6 +139,29 @@ static inline void write_le32(uint8_t *buf, uint32_t val)
 #define SONY_VID 0x054c
 #define REMOTE_PID 0x01c9
 #define REMOTE_PID2 0x02d2
+
+static SDL_Renderer *g_renderer;
+
+const static int format_map[] = {
+    SDL_PIXELFORMAT_RGB565,
+    SDL_PIXELFORMAT_ARGB1555,
+    SDL_PIXELFORMAT_ARGB4444,
+    SDL_PIXELFORMAT_ARGB8888};
+
+static SDL_Texture *g_textures[] = {NULL, NULL, NULL, NULL};
+
+static inline SDL_Texture *get_texture(int32_t mode)
+{
+   if (!g_textures[mode])
+      g_textures[mode] = SDL_CreateTexture(
+         g_renderer,
+         format_map[mode],
+         SDL_TEXTUREACCESS_STREAMING,
+         PSP_WIDTH,
+         PSP_HEIGHT);
+
+   return g_textures[mode];
+}
 
 static bool send_event(int type, int val1, int val2)
 {
@@ -199,121 +223,36 @@ static bool handle_hello(libusb_device_handle *dev)
    return true;
 }
 
-static void texture_rgb565(const void *block_, size_t size)
-{
-   const uint16_t *block = (const uint16_t *)block_;
-   size >>= 1;
-
-   if (size > PSP_WIDTH * PSP_HEIGHT)
-      size = PSP_WIDTH * PSP_HEIGHT;
-
-   for (size_t i = 0; i < size; i++)
-   {
-      uint16_t col = block[i];
-      uint32_t r = (col >> 0) & 0x1f;
-      uint32_t g = (col >> 5) & 0x3f;
-      uint32_t b = (col >> 11) & 0x1f;
-      r = (r << 3) | (r >> 2);
-      g = (g << 2) | (g >> 4);
-      b = (b << 3) | (b >> 2);
-      g_frame[i] = (r << 16) | (g << 8) | (b << 0);
-   }
-}
-
-static void texture_argb1555(const void *block_, size_t size)
-{
-   const uint16_t *block = (const uint16_t *)block_;
-   size >>= 1;
-
-   if (size > PSP_WIDTH * PSP_HEIGHT)
-      size = PSP_WIDTH * PSP_HEIGHT;
-
-   for (size_t i = 0; i < size; i++)
-   {
-      uint16_t col = block[i];
-      uint32_t r = (col >> 0) & 0x1f;
-      uint32_t g = (col >> 5) & 0x1f;
-      uint32_t b = (col >> 10) & 0x1f;
-      r = (r << 3) | (r >> 2);
-      g = (g << 3) | (g >> 2);
-      b = (b << 3) | (b >> 2);
-      g_frame[i] = (r << 16) | (g << 8) | (b << 0);
-   }
-}
-
-static void texture_argb4444(const void *block_, size_t size)
-{
-   const uint16_t *block = (const uint16_t *)block_;
-   size >>= 1;
-
-   if (size > PSP_WIDTH * PSP_HEIGHT)
-      size = PSP_WIDTH * PSP_HEIGHT;
-
-   for (size_t i = 0; i < size; i++)
-   {
-      uint16_t col = block[i];
-      uint32_t r = (col >> 0) & 0x0f;
-      uint32_t g = (col >> 4) & 0x0f;
-      uint32_t b = (col >> 8) & 0x0f;
-      r = (r << 4) | (r >> 0);
-      g = (g << 4) | (g >> 0);
-      b = (b << 4) | (b >> 0);
-      g_frame[i] = (r << 16) | (g << 8) | (b << 0);
-   }
-}
-
-static void texture_argb8888(const void *block_, size_t size)
-{
-   const uint32_t *block = (const uint32_t *)block_;
-
-   size >>= 2;
-   if (size > PSP_WIDTH * PSP_HEIGHT)
-      size = PSP_WIDTH * PSP_HEIGHT;
-
-   for (size_t i = 0; i < size; i++)
-   {
-      uint32_t col = block[i];
-      uint32_t r = (col >> 0) & 0xff;
-      uint32_t g = (col >> 8) & 0xff;
-      uint32_t b = (col >> 16) & 0xff;
-      uint32_t a = (col >> 24) & 0xff;
-      g_frame[i] = (r << 16) | (g << 8) | (b << 0) | (a << 24);
-   }
-}
-
 static void process_bulk(const uint8_t *block, size_t size)
 {
    struct JoyScrHeader *header = (struct JoyScrHeader *)block;
-   //printf("Buff mode: %u\n", le32(header->mode));
-   //printf("VCount: %d\n", le32(header->ref));
-   //printf("Size: %d\n", le32(header->size));
-
-   slock_lock(g_lock);
+   printf("Buff mode: %u\n", le32(header->mode));
+   printf("VCount: %d\n", le32(header->ref));
+   printf("Size: %d\n", le32(header->size));
 
    //memcpy(g_frame, block + sizeof(*header), le32(header->size));
+   int32_t mode = (header->mode >> 4) & 0x0f;
 
-   switch ((header->mode >> 4) & 0x0f)
+   if (mode < 0 || mode > 3)
    {
-   case 0x00:
-      texture_rgb565(block + sizeof(*header), le32(header->size));
-      break;
-
-   case 0x01:
-      texture_argb1555(block + sizeof(*header), le32(header->size));
-      break;
-
-   case 0x02:
-      texture_argb4444(block + sizeof(*header), le32(header->size));
-      break;
-
-   case 0x03:
-      texture_argb8888(block + sizeof(*header), le32(header->size));
-      break;
-   default:
       printf("Unknown header mode %d.\n", (header->mode >> 4) & 0x0f);
+      return;
    }
 
-   slock_unlock(g_lock);
+   int32_t size = le32(header->size);
+
+   if (size > PSP_WIDTH * PSP_HEIGHT)
+   {
+      printf("Too big header size %d.\n", size);
+      return;
+   }
+
+   SDL_Texture *texture = get_texture(mode);
+   void **pixels = NULL;
+   int *pitch = NULL;
+   SDL_LockTexture(texture, NULL, &pixels, &pitch);
+   memcpy(pixels, block + sizeof(*header), size);
+   SDL_UnlockTexture(texture);
 }
 
 #define HOSTFS_MAX_BLOCK (1024 * 1024)
@@ -491,15 +430,36 @@ bool init_program(void)
       goto error;
    }
 
-   g_lock = slock_new();
-   if (!g_lock)
-      goto error;
-
    g_thread_failed = false;
    g_thread_die = false;
    g_thread = sthread_create(bulk_thread, NULL);
    if (!g_thread)
       goto error;
+
+   SDL_Init(SDL_INIT_VIDEO);
+
+   SDL_Window *window = SDL_CreateWindow(
+      "RJL-Client",
+      SDL_WINDOWPOS_UNDEFINED,
+      SDL_WINDOWPOS_UNDEFINED,
+      PSP_WIDTH,
+      PSP_HEIGHT,
+      SDL_WINDOW_BORDERLESS
+   );
+
+   if (window == NULL)
+   {
+      puts("SDL_CreateWindow failed.");
+      goto error;
+   }
+
+   g_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+   if (g_renderer == NULL)
+   {
+      puts("SDL_CreateRenderer failed.");
+      goto error;
+   }
 
    return true;
 error:
@@ -518,12 +478,6 @@ void deinit_program(void)
       g_thread_failed = false;
    }
 
-   if (g_lock)
-   {
-      slock_free(g_lock);
-      g_lock = NULL;
-   }
-
    if (g_dev)
    {
       libusb_release_interface(g_dev, 0);
@@ -537,6 +491,12 @@ void deinit_program(void)
       libusb_exit(g_ctx);
       g_ctx = NULL;
    }
+
+   for (int32_t mode = 0; mode < 4; mode++)
+      if (g_textures[mode] != NULL)
+         SDL_DestroyTexture(g_textures[mode]);
+
+   SDL_Quit();
 }
 
 void run_program(void)
@@ -545,11 +505,11 @@ void run_program(void)
       environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
 
    // TODO: Employ a more "sane" scheme using conditional variables, etc.
-   slock_lock(g_lock);
-   memcpy(g_frame_buffer, g_frame, sizeof(g_frame));
-   slock_unlock(g_lock);
+   // slock_lock(g_lock);
+   // memcpy(g_frame_buffer, g_frame, sizeof(g_frame));
+   // slock_unlock(g_lock);
 
-   video_cb(g_frame_buffer, PSP_WIDTH, PSP_HEIGHT, PSP_WIDTH * sizeof(uint32_t));
+   // video_cb(g_frame_buffer, PSP_WIDTH, PSP_HEIGHT, PSP_WIDTH * sizeof(uint32_t));
    // No audio :(
    // TODO: Poll input here.
 }
