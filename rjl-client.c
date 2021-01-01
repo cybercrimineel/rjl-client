@@ -1,9 +1,8 @@
+#include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 #include <signal.h>
-#include "remotejoy.h"
-#include "thread.h"
-#include "libusb/libusb/libusb.h"
+#include "libusb-1.0.24/libusb/libusb.h"
 
 #define TYPE_JOY_CMD 1
 #define TYPE_JOY_DAT 2
@@ -47,6 +46,14 @@
 #define SCREEN_CMD_GET_TRNSW(x)		(((x) >> 16) & 0x7f)
 #define SCREEN_CMD_SET_TRNSH(x)		((x) << 23)
 #define SCREEN_CMD_GET_TRNSH(x)		(((x) >> 23) & 0x1ff)
+
+#define PSP_WIDTH 480
+#define PSP_HEIGHT 272
+
+// Magic stuff from RemoteJoy-Lite/Win32.
+#define SONY_VID 0x054c
+#define REMOTE_PID 0x01c9
+#define REMOTE_PID2 0x02d2
 
 enum async_channels
 {
