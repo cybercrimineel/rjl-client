@@ -110,12 +110,10 @@ struct EventData
 
 static volatile sig_atomic_t g_thread_die;
 static volatile sig_atomic_t g_thread_failed;
-static uint32_t g_frame[PSP_WIDTH * PSP_HEIGHT];
-static uint32_t g_frame_buffer[PSP_WIDTH * PSP_HEIGHT];
 static sthread_t *g_thread;
 
-static libusb_context *g_ctx;
-static libusb_device_handle *g_dev;
+static libusb_context *context;
+static libusb_device_handle *device;
 
 static inline uint32_t read_le32(const uint8_t *buf)
 {
@@ -140,8 +138,8 @@ static inline void write_le32(uint8_t *buf, uint32_t val)
 #define REMOTE_PID 0x01c9
 #define REMOTE_PID2 0x02d2
 
-static SDL_Renderer *g_renderer;
-static SDL_Texture *g_textures[] = {NULL, NULL, NULL, NULL};
+static SDL_Renderer *renderer;
+static SDL_Texture *textures[] = {NULL, NULL, NULL, NULL};
 
 static bool send_event(int type, int val1, int val2)
 {
@@ -160,7 +158,7 @@ static bool send_event(int type, int val1, int val2)
    };
 
    int transferred;
-   if (libusb_bulk_transfer(g_dev, 3, (uint8_t *)&data, sizeof(data), &transferred, 1000) < 0)
+   if (libusb_bulk_transfer(device, 3, (uint8_t *)&data, sizeof(data), &transferred, 1000) < 0)
    {
       puts("send_event() failed.");
       return false;
@@ -279,7 +277,7 @@ static int usb_check_device(void)
    uint8_t mag[4];
    write_le32(mag, HOSTFS_MAGIC);
    int transferred = 0;
-   int ret = libusb_bulk_transfer(g_dev, 2, mag, sizeof(mag), &transferred, 1000);
+   int ret = libusb_bulk_transfer(device, 2, mag, sizeof(mag), &transferred, 1000);
    if (ret < 0)
    {
       printf("Failed to do magic init ... Error: %d", ret);
@@ -315,7 +313,7 @@ static void bulk_thread(void *dummy)
       }
 
       int transferred = 0;
-      int ret = libusb_bulk_transfer(g_dev, 0x01 | LIBUSB_ENDPOINT_IN,
+      int ret = libusb_bulk_transfer(device, 0x01 | LIBUSB_ENDPOINT_IN,
                                      buffer, sizeof(buffer), &transferred, 1000);
 
       if (ret < 0)
@@ -339,19 +337,19 @@ static void bulk_thread(void *dummy)
       {
       case HOSTFS_MAGIC:
          //printf("HOSTFS_MAGIC\n");
-         if (!handle_hello(g_dev))
+         if (!handle_hello(device))
             goto error;
 
          active = true;
          break;
       case ASYNC_MAGIC:
          //printf("ASYNC_MAGIC\n");
-         if (!handle_async(g_dev))
+         if (!handle_async(device))
             goto error;
          break;
       case BULK_MAGIC:
          //printf("BULK_MAGIC\n");
-         if (!handle_bulk(g_dev, buffer, transferred))
+         if (!handle_bulk(device, buffer, transferred))
             goto error;
          break;
       default:
@@ -366,31 +364,31 @@ error:
 
 bool init_program(void)
 {
-   if (libusb_init(&g_ctx) < 0)
+   if (libusb_init(&context) < 0)
    {
       puts("libusb_init failed.");
       goto error;
    }
 
-   g_dev = libusb_open_device_with_vid_pid(g_ctx, SONY_VID, REMOTE_PID);
+   device = libusb_open_device_with_vid_pid(context, SONY_VID, REMOTE_PID);
 
-   if (!g_dev)
+   if (!device)
    {
       puts("libusb_open_device_with_vid_pid failed, trying attempt 2...");
 
-      g_dev = libusb_open_device_with_vid_pid(g_ctx, SONY_VID, REMOTE_PID2);
+      device = libusb_open_device_with_vid_pid(context, SONY_VID, REMOTE_PID2);
 
-      if (!g_dev)
+      if (!device)
       {
          puts("libusb_open_device_with_vid_pid attempt 2 failed...");
          goto error;
       }
    }
 
-   if (libusb_kernel_driver_active(g_dev, 0))
+   if (libusb_kernel_driver_active(device, 0))
    {
 #ifndef __WIN32__
-      if (libusb_detach_kernel_driver(g_dev, 0) < 0)
+      if (libusb_detach_kernel_driver(device, 0) < 0)
       {
          puts("libusb_detach_kernel_driver failed.");
          goto error;
@@ -398,21 +396,21 @@ bool init_program(void)
 #endif
    }
 
-   if (libusb_set_configuration(g_dev, 1) < 0)
+   if (libusb_set_configuration(device, 1) < 0)
    {
       puts("libusb_set_configuration failed.");
       goto error;
    }
 
-   if (libusb_claim_interface(g_dev, 0) < 0)
+   if (libusb_claim_interface(device, 0) < 0)
    {
       puts("libusb_claim_interface failed.");
       goto error;
    }
 
    for (uint32_t mode = 0; mode < 4; mode++)
-      g_textures[mode] = SDL_CreateTexture(
-          g_renderer,
+      textures[mode] = SDL_CreateTexture(
+          renderer,
           ((const uint32_t[]){
               SDL_PIXELFORMAT_RGB565,
               SDL_PIXELFORMAT_ARGB1555,
@@ -444,9 +442,9 @@ bool init_program(void)
       goto error;
    }
 
-   g_renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+   renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-   if (g_renderer == NULL)
+   if (renderer == NULL)
    {
       puts("SDL_CreateRenderer failed.");
       goto error;
@@ -469,23 +467,23 @@ void deinit_program(void)
       g_thread_failed = false;
    }
 
-   if (g_dev)
+   if (device)
    {
-      libusb_release_interface(g_dev, 0);
-      libusb_attach_kernel_driver(g_dev, 0);
-      libusb_close(g_dev);
-      g_dev = NULL;
+      libusb_release_interface(device, 0);
+      libusb_attach_kernel_driver(device, 0);
+      libusb_close(device);
+      device = NULL;
    }
 
-   if (g_ctx)
+   if (context)
    {
-      libusb_exit(g_ctx);
-      g_ctx = NULL;
+      libusb_exit(context);
+      context = NULL;
    }
 
    for (int32_t mode = 0; mode < 4; mode++)
-      if (g_textures[mode] != NULL)
-         SDL_DestroyTexture(g_textures[mode]);
+      if (textures[mode] != NULL)
+         SDL_DestroyTexture(textures[mode]);
 
    SDL_Quit();
 }
