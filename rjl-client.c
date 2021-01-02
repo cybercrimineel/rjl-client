@@ -141,27 +141,7 @@ static inline void write_le32(uint8_t *buf, uint32_t val)
 #define REMOTE_PID2 0x02d2
 
 static SDL_Renderer *g_renderer;
-
-const static int format_map[] = {
-    SDL_PIXELFORMAT_RGB565,
-    SDL_PIXELFORMAT_ARGB1555,
-    SDL_PIXELFORMAT_ARGB4444,
-    SDL_PIXELFORMAT_ARGB8888};
-
 static SDL_Texture *g_textures[] = {NULL, NULL, NULL, NULL};
-
-static inline SDL_Texture *get_texture(int32_t mode)
-{
-   if (!g_textures[mode])
-      g_textures[mode] = SDL_CreateTexture(
-         g_renderer,
-         format_map[mode],
-         SDL_TEXTUREACCESS_STREAMING,
-         PSP_WIDTH,
-         PSP_HEIGHT);
-
-   return g_textures[mode];
-}
 
 static bool send_event(int type, int val1, int val2)
 {
@@ -430,6 +410,18 @@ bool init_program(void)
       goto error;
    }
 
+   for (uint32_t mode = 0; mode < 4; mode++)
+      g_textures[mode] = SDL_CreateTexture(
+          g_renderer,
+          ((const uint32_t[]){
+              SDL_PIXELFORMAT_RGB565,
+              SDL_PIXELFORMAT_ARGB1555,
+              SDL_PIXELFORMAT_ARGB4444,
+              SDL_PIXELFORMAT_ARGB8888})[mode],
+          SDL_TEXTUREACCESS_STREAMING,
+          PSP_WIDTH,
+          PSP_HEIGHT);
+
    g_thread_failed = false;
    g_thread_die = false;
    g_thread = sthread_create(bulk_thread, NULL);
@@ -439,13 +431,12 @@ bool init_program(void)
    SDL_Init(SDL_INIT_VIDEO);
 
    SDL_Window *window = SDL_CreateWindow(
-      "RJL-Client",
-      SDL_WINDOWPOS_UNDEFINED,
-      SDL_WINDOWPOS_UNDEFINED,
-      PSP_WIDTH,
-      PSP_HEIGHT,
-      SDL_WINDOW_BORDERLESS
-   );
+       "RJL-Client",
+       SDL_WINDOWPOS_UNDEFINED,
+       SDL_WINDOWPOS_UNDEFINED,
+       PSP_WIDTH,
+       PSP_HEIGHT,
+       SDL_WINDOW_BORDERLESS);
 
    if (window == NULL)
    {
