@@ -225,7 +225,7 @@ static void process_bulk(const uint8_t *block, size_t size)
       return;
    }
 
-   SDL_Texture *texture = get_texture(mode);
+   SDL_Texture *texture = textures[mode];
    void **pixels = NULL;
    int *pitch = NULL;
    SDL_LockTexture(texture, NULL, &pixels, &pitch);
@@ -362,7 +362,7 @@ error:
    g_thread_failed = true;
 }
 
-bool init_program(void)
+bool init(void)
 {
    if (libusb_init(&context) < 0)
    {
@@ -452,11 +452,11 @@ bool init_program(void)
 
    return true;
 error:
-   deinit_program();
+   deinit();
    return false;
 }
 
-void deinit_program(void)
+void deinit(void)
 {
    if (g_thread)
    {
@@ -487,6 +487,14 @@ void deinit_program(void)
 
    SDL_Quit();
 }
+
+int main(int argc, char const *argv[])
+{
+   init();
+   deinit();
+   return 0;
+}
+
 
 void run_program(void)
 {
