@@ -141,6 +141,12 @@ static inline void write_le32(uint8_t *buf, uint32_t val)
 static SDL_Renderer *renderer;
 static SDL_Texture *textures[] = {NULL, NULL, NULL, NULL};
 
+const static uint32_t formats[] = {
+    SDL_PIXELFORMAT_RGB565,
+    SDL_PIXELFORMAT_ARGB1555,
+    SDL_PIXELFORMAT_ARGB4444,
+    SDL_PIXELFORMAT_ARGB8888};
+
 static bool send_event(int type, int val1, int val2)
 {
    //printf("Sending event ...\n");
@@ -411,11 +417,7 @@ bool init(void)
    for (uint32_t mode = 0; mode < 4; mode++)
       textures[mode] = SDL_CreateTexture(
           renderer,
-          ((const uint32_t[]){
-              SDL_PIXELFORMAT_RGB565,
-              SDL_PIXELFORMAT_ARGB1555,
-              SDL_PIXELFORMAT_ARGB4444,
-              SDL_PIXELFORMAT_ARGB8888})[mode],
+          formats[mode],
           SDL_TEXTUREACCESS_STREAMING,
           PSP_WIDTH,
           PSP_HEIGHT);
@@ -494,7 +496,6 @@ int main(int argc, char const *argv[])
    deinit();
    return 0;
 }
-
 
 void run_program(void)
 {
