@@ -110,7 +110,7 @@ struct EventData
 
 static volatile sig_atomic_t g_thread_die;
 static volatile sig_atomic_t g_thread_failed;
-static sthread_t *g_thread;
+// TODO: static sthread_t *g_thread;
 
 static libusb_context *context;
 static libusb_device_handle *device;
@@ -139,7 +139,8 @@ static inline void write_le32(uint8_t *buf, uint32_t val)
 #define REMOTE_PID2 0x02d2
 
 static SDL_Renderer *renderer;
-static SDL_Texture *frames[] = {NULL, NULL, NULL, NULL};
+static SDL_Texture *frames[4];
+static SDL_Window *window;
 
 const static uint32_t formats[] = {
     SDL_PIXELFORMAT_RGB565,
@@ -433,13 +434,16 @@ bool init(void)
 
    g_thread_failed = false;
    g_thread_die = false;
+
+   /* TODO:
    g_thread = sthread_create(bulk_thread, NULL);
    if (!g_thread)
       goto error;
+   */
 
    SDL_Init(SDL_INIT_VIDEO);
 
-   SDL_Window *window = SDL_CreateWindow(
+   window = SDL_CreateWindow(
        "RJL-Client",
        SDL_WINDOWPOS_UNDEFINED,
        SDL_WINDOWPOS_UNDEFINED,
@@ -469,6 +473,7 @@ error:
 
 void deinit(void)
 {
+   /* TODO:
    if (g_thread)
    {
       g_thread_die = true;
@@ -477,6 +482,7 @@ void deinit(void)
       g_thread_die = false;
       g_thread_failed = false;
    }
+   */
 
    if (device)
    {
@@ -497,20 +503,25 @@ void deinit(void)
       if (frames[mode])
          SDL_DestroyTexture(frames[mode]);
 
+   SDL_DestroyRenderer(renderer);
+   SDL_DestroyWindow(window);
    SDL_Quit();
 }
 
 int main(int argc, char const *argv[])
 {
    init();
+   SDL_Delay(3000);
    deinit();
    return 0;
 }
 
 void run_program(void)
 {
+   /* TODO:
    if (g_thread_failed)
       environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
+   */
 
    // TODO: Employ a more "sane" scheme using conditional variables, etc.
    // slock_lock(g_lock);
