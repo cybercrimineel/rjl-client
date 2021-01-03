@@ -142,7 +142,7 @@ static SDL_Renderer *renderer;
 static SDL_Texture *frames[4];
 static SDL_Window *window;
 
-const static uint32_t formats[] = {
+static const uint32_t formats[] = {
     SDL_PIXELFORMAT_RGB565,
     SDL_PIXELFORMAT_ARGB1555,
     SDL_PIXELFORMAT_ARGB4444,
@@ -208,7 +208,7 @@ static bool handle_hello(libusb_device_handle *dev)
    return true;
 }
 
-static void process_bulk(const uint8_t *block, size_t size)
+static void process_bulk(const uint8_t *block)
 {
    struct JoyScrHeader *header = (struct JoyScrHeader *)block;
    printf("Buff mode: %u\n", le32(header->mode));
@@ -233,8 +233,8 @@ static void process_bulk(const uint8_t *block, size_t size)
    }
 
    SDL_Texture *frame = frames[mode];
-   int *pitch = NULL;
-   void **pixels = NULL;
+   int pitch;
+   void *pixels;
 
    if (SDL_LockTexture(frame, NULL, &pixels, &pitch) < 0)
       puts(SDL_GetError());
@@ -277,7 +277,7 @@ static bool handle_bulk(libusb_device_handle *dev, uint8_t *data, size_t size)
       read_size += transferred;
    }
 
-   process_bulk(bulk_block, data_size);
+   process_bulk(bulk_block);
    return true;
 }
 
@@ -377,6 +377,43 @@ error:
    g_thread_failed = true;
 }
 
+void deinit(void)
+{
+   /* TODO:
+   if (g_thread)
+   {
+      g_thread_die = true;
+      sthread_join(g_thread);
+      g_thread = NULL;
+      g_thread_die = false;
+      g_thread_failed = false;
+   }
+   */
+
+   if (device)
+   {
+      libusb_release_interface(device, 0);
+      libusb_attach_kernel_driver(device, 0);
+      libusb_close(device);
+      device = NULL;
+   }
+
+   if (context)
+   {
+      libusb_exit(context);
+      context = NULL;
+   }
+
+   // TODO: check for nulls
+   for (int32_t mode = 0; mode < 4; mode++)
+      if (frames[mode])
+         SDL_DestroyTexture(frames[mode]);
+
+   SDL_DestroyRenderer(renderer);
+   SDL_DestroyWindow(window);
+   SDL_Quit();
+}
+
 bool init(void)
 {
    if (libusb_init(&context) < 0)
@@ -471,44 +508,7 @@ error:
    return false;
 }
 
-void deinit(void)
-{
-   /* TODO:
-   if (g_thread)
-   {
-      g_thread_die = true;
-      sthread_join(g_thread);
-      g_thread = NULL;
-      g_thread_die = false;
-      g_thread_failed = false;
-   }
-   */
-
-   if (device)
-   {
-      libusb_release_interface(device, 0);
-      libusb_attach_kernel_driver(device, 0);
-      libusb_close(device);
-      device = NULL;
-   }
-
-   if (context)
-   {
-      libusb_exit(context);
-      context = NULL;
-   }
-
-   // TODO: check for nulls
-   for (int32_t mode = 0; mode < 4; mode++)
-      if (frames[mode])
-         SDL_DestroyTexture(frames[mode]);
-
-   SDL_DestroyRenderer(renderer);
-   SDL_DestroyWindow(window);
-   SDL_Quit();
-}
-
-int main(int argc, char const *argv[])
+int main(void)
 {
    init();
    SDL_Delay(3000);
