@@ -139,7 +139,7 @@ static inline void write_le32(uint8_t *buf, uint32_t val)
 #define REMOTE_PID2 0x02d2
 
 static SDL_Renderer *renderer;
-static SDL_Texture *textures[] = {NULL, NULL, NULL, NULL};
+static SDL_Texture *frames[] = {NULL, NULL, NULL, NULL};
 
 const static uint32_t formats[] = {
     SDL_PIXELFORMAT_RGB565,
@@ -219,7 +219,7 @@ static void process_bulk(const uint8_t *block, size_t size)
 
    if (mode < 0 || mode > 3)
    {
-      printf("Unknown header mode %d.\n", (header->mode >> 4) & 0x0f);
+      printf("Unknown header mode %d.\n", mode);
       return;
    }
 
@@ -231,12 +231,20 @@ static void process_bulk(const uint8_t *block, size_t size)
       return;
    }
 
-   SDL_Texture *texture = textures[mode];
-   void **pixels = NULL;
+   SDL_Texture *frame = frames[mode];
    int *pitch = NULL;
-   SDL_LockTexture(texture, NULL, &pixels, &pitch);
+   void **pixels = NULL;
+
+   if (SDL_LockTexture(frame, NULL, &pixels, &pitch) < 0)
+      puts(SDL_GetError());
+
    memcpy(pixels, block + sizeof(*header), size);
-   SDL_UnlockTexture(texture);
+   SDL_UnlockTexture(frame);
+
+   if(SDL_RenderCopy(renderer, frame, NULL, NULL) < 0)
+      puts(SDL_GetError());
+
+   SDL_RenderPresent(renderer);
 }
 
 #define HOSTFS_MAX_BLOCK (1024 * 1024)
@@ -414,8 +422,9 @@ bool init(void)
       goto error;
    }
 
-   for (uint32_t mode = 0; mode < 4; mode++)
-      textures[mode] = SDL_CreateTexture(
+   // TODO: check for errors
+   for (int32_t mode = 0; mode < 4; mode++)
+      frames[mode] = SDL_CreateTexture(
           renderer,
           formats[mode],
           SDL_TEXTUREACCESS_STREAMING,
@@ -440,7 +449,7 @@ bool init(void)
 
    if (window == NULL)
    {
-      puts("SDL_CreateWindow failed.");
+      puts(SDL_GetError());
       goto error;
    }
 
@@ -448,7 +457,7 @@ bool init(void)
 
    if (renderer == NULL)
    {
-      puts("SDL_CreateRenderer failed.");
+      puts(SDL_GetError());
       goto error;
    }
 
@@ -483,9 +492,10 @@ void deinit(void)
       context = NULL;
    }
 
+   // TODO: check for nulls
    for (int32_t mode = 0; mode < 4; mode++)
-      if (textures[mode] != NULL)
-         SDL_DestroyTexture(textures[mode]);
+      if (frames[mode])
+         SDL_DestroyTexture(frames[mode]);
 
    SDL_Quit();
 }
