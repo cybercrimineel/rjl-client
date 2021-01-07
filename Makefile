@@ -1,2 +1,2 @@
 rjl-client:
-	gcc -Wall -Wextra rjl-client.c libusb-1.0.24/libusb/*.o SDL2-2.0.14/build/*.o -lm -ldl -lpthread -lrt -ludev -o $@
+	gcc -L SDL2-2.0.14/build/.libs -L libusb-1.0.24/libusb/.libs -l usb-1.0 -l SDL2 -Wall -Wextra rjl-client.c -o $@
