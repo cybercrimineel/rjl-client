@@ -1,10 +1,11 @@
-#include <stdbool.h>
-#include <stdint.h>
-#include <string.h>
-#include <signal.h>
-#include "libusb-1.0.24/libusb/libusb.h"
 #include "SDL2-2.0.14/include/SDL.h"
 #include "SDL2-2.0.14/include/SDL_render.h"
+#include "libusb-1.0.24/libusb/libusb.h"
+#include <signal.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #define TYPE_JOY_CMD 1
 #define TYPE_JOY_DAT 2
